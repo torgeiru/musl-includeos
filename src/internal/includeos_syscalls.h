@@ -184,7 +184,6 @@ __includeos(SYS_pipe);
 __includeos(SYS_pipe2);
 __includeos(SYS_pivot_root);
 __includeos(SYS_ppoll);
-__includeos(SYS_prctl);
 __includeos(SYS_pread);
 __includeos(SYS_preadv);
 __includeos(SYS_preadv2);
