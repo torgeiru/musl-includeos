@@ -70,6 +70,8 @@ __includeos(SYS_sync);
 __includeos(SYS_vhangup);
 extern int syscall_SYS_open(const char *path, int oflag, ...);
 
+__includeos(SYS_arch_prctl);
+
 __includeos(SYS_access);
 __includeos(SYS_acct);
 __includeos(SYS_adjtimex);
