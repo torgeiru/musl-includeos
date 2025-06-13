@@ -240,9 +240,9 @@ int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict att
 	size_t size, guard;
 	struct pthread *self, *new;
 	unsigned char *map = 0, *stack = 0, *tsd = 0, *stack_limit;
-	unsigned flags = CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND
-		| CLONE_THREAD | CLONE_SYSVSEM | CLONE_SETTLS
-		| CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID | CLONE_DETACHED;
+	// unsigned flags = CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND
+	// 	| CLONE_THREAD | CLONE_SYSVSEM | CLONE_SETTLS
+	// 	| CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID | CLONE_DETACHED;
 	pthread_attr_t attr = { 0 };
 	sigset_t set;
 
@@ -255,14 +255,14 @@ int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict att
 		init_file_lock(__stdin_used);
 		init_file_lock(__stdout_used);
 		init_file_lock(__stderr_used);
-		__syscall(SYS_rt_sigprocmask, SIG_UNBLOCK, SIGPT_SET, 0, _NSIG/8);
+		// __syscall(SYS_rt_sigprocmask, SIG_UNBLOCK, SIGPT_SET, 0, _NSIG/8);
 		self->tsd = (void **)__pthread_tsd_main;
-		__membarrier_init();
+		// __membarrier_init();
 		libc.threaded = 1;
 	}
 	if (attrp && !c11) attr = *attrp;
 
-	__acquire_ptc();
+	// __acquire_ptc();
 	if (!attrp || c11) {
 		attr._a_stacksize = __default_stacksize;
 		attr._a_guardsize = __default_guardsize;
@@ -291,18 +291,18 @@ int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict att
 	}
 
 	if (!tsd) {
-		if (guard) {
-			map = __mmap(0, size, PROT_NONE, MAP_PRIVATE|MAP_ANON, -1, 0);
-			if (map == MAP_FAILED) goto fail;
-			if (__mprotect(map+guard, size-guard, PROT_READ|PROT_WRITE)
-			    && errno != ENOSYS) {
-				__munmap(map, size);
-				goto fail;
-			}
-		} else {
+		// if (guard) {
+		// 	map = __mmap(0, size, PROT_NONE, MAP_PRIVATE|MAP_ANON, -1, 0);
+		// 	if (map == MAP_FAILED) goto fail;
+		// 	if (__mprotect(map+guard, size-guard, PROT_READ|PROT_WRITE)
+		// 	    && errno != ENOSYS) {
+		// 		__munmap(map, size);
+		// 		goto fail;
+		// 	}
+		// } else {
 			map = __mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0);
 			if (map == MAP_FAILED) goto fail;
-		}
+		// }
 		tsd = map + size - __pthread_tsd_size;
 		if (!stack) {
 			stack = tsd - libc.tls_size;
@@ -319,11 +319,11 @@ int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict att
 	new->self = new;
 	new->tsd = (void *)tsd;
 	new->locale = &libc.global_locale;
-	if (attr._a_detach) {
-		new->detach_state = DT_DETACHED;
-	} else {
-		new->detach_state = DT_JOINABLE;
-	}
+	// if (attr._a_detach) {
+	// 	new->detach_state = DT_DETACHED;
+	// } else {
+	// 	new->detach_state = DT_JOINABLE;
+	// }
 	new->robust_list.head = &new->robust_list.head;
 	new->canary = self->canary;
 	new->sysinfo = self->sysinfo;
@@ -331,65 +331,65 @@ int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict att
 	/* Setup argument structure for the new thread on its stack.
 	 * It's safe to access from the caller only until the thread
 	 * list is unlocked. */
-	stack -= (uintptr_t)stack % sizeof(uintptr_t);
-	stack -= sizeof(struct start_args);
-	struct start_args *args = (void *)stack;
-	args->start_func = entry;
-	args->start_arg = arg;
-	args->control = attr._a_sched ? 1 : 0;
+	// stack -= (uintptr_t)stack % sizeof(uintptr_t);
+	// stack -= sizeof(struct start_args);
+	// struct start_args *args = (void *)stack;
+	// args->start_func = entry;
+	// args->start_arg = arg;
+	// args->control = attr._a_sched ? 1 : 0;
 
 	/* Application signals (but not the synccall signal) must be
 	 * blocked before the thread list lock can be taken, to ensure
 	 * that the lock is AS-safe. */
-	__block_app_sigs(&set);
+	// __block_app_sigs(&set);
 
 	/* Ensure SIGCANCEL is unblocked in new thread. This requires
 	 * working with a copy of the set so we can restore the
 	 * original mask in the calling thread. */
-	memcpy(&args->sig_mask, &set, sizeof args->sig_mask);
-	args->sig_mask[(SIGCANCEL-1)/8/sizeof(long)] &=
-		~(1UL<<((SIGCANCEL-1)%(8*sizeof(long))));
+	// memcpy(&args->sig_mask, &set, sizeof args->sig_mask);
+	// args->sig_mask[(SIGCANCEL-1)/8/sizeof(long)] &=
+	// 	~(1UL<<((SIGCANCEL-1)%(8*sizeof(long))));
 
-	__tl_lock();
+	// __tl_lock();
 	if (!libc.threads_minus_1++) libc.need_locks = 1;
-	ret = __clone((c11 ? start_c11 : start), stack, flags, args, &new->tid, TP_ADJ(new), &__thread_list_lock);
+	// ret = __clone((c11 ? start_c11 : start), stack, flags, args, &new->tid, TP_ADJ(new), &__thread_list_lock);
 
 	/* All clone failures translate to EAGAIN. If explicit scheduling
 	 * was requested, attempt it before unlocking the thread list so
 	 * that the failed thread is never exposed and so that we can
 	 * clean up all transient resource usage before returning. */
-	if (ret < 0) {
-		ret = -EAGAIN;
-	} else if (attr._a_sched) {
-		ret = __syscall(SYS_sched_setscheduler,
-			new->tid, attr._a_policy, &attr._a_prio);
-		if (a_swap(&args->control, ret ? 3 : 0)==2)
-			__wake(&args->control, 1, 1);
-		if (ret)
-			__wait(&args->control, 0, 3, 0);
-	}
+	// if (ret < 0) {
+	// 	ret = -EAGAIN;
+	// } else if (attr._a_sched) {
+	// 	ret = __syscall(SYS_sched_setscheduler,
+	// 		new->tid, attr._a_policy, &attr._a_prio);
+	// 	if (a_swap(&args->control, ret ? 3 : 0)==2)
+	// 		__wake(&args->control, 1, 1);
+	// 	if (ret)
+	// 		__wait(&args->control, 0, 3, 0);
+	// }
 
-	if (ret >= 0) {
+	//if (ret >= 0) {
 		new->next = self->next;
 		new->prev = self;
 		new->next->prev = new;
 		new->prev->next = new;
-	} else {
-		if (!--libc.threads_minus_1) libc.need_locks = 0;
-	}
-	__tl_unlock();
-	__restore_sigs(&set);
-	__release_ptc();
+	//} else {
+	//	if (!--libc.threads_minus_1) libc.need_locks = 0;
+	//}
+	// __tl_unlock();
+	// __restore_sigs(&set);
+	// __release_ptc();
 
-	if (ret < 0) {
-		if (map) __munmap(map, size);
-		return -ret;
-	}
+	//if (ret < 0) {
+	//	if (map) __munmap(map, size);
+	//	return -ret;
+	//}
 
 	*res = new;
 	return 0;
 fail:
-	__release_ptc();
+	//__release_ptc();
 	return EAGAIN;
 }
 
