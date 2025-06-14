@@ -236,15 +236,15 @@ static void init_file_lock(FILE *f)
 
 int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict attrp, void *(*entry)(void *), void *restrict arg)
 {
-	int ret, c11 = (attrp == __ATTRP_C11_THREAD);
-	size_t size, guard;
+	// int ret, c11 = (attrp == __ATTRP_C11_THREAD);
+	size_t size /*, guard */;
 	struct pthread *self, *new;
-	unsigned char *map = 0, *stack = 0, *tsd = 0, *stack_limit;
+	unsigned char *map = 0 /*, *stack = 0*/, *tsd = 0 /*, *stack_limit */ ;
 	// unsigned flags = CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND
 	// 	| CLONE_THREAD | CLONE_SYSVSEM | CLONE_SETTLS
 	// 	| CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID | CLONE_DETACHED;
-	pthread_attr_t attr = { 0 };
-	sigset_t set;
+	// pthread_attr_t attr = { 0 };
+	// sigset_t set;
 
 	if (!libc.can_do_threads) return ENOSYS;
 	self = __pthread_self();
@@ -260,62 +260,62 @@ int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict att
 		// __membarrier_init();
 		libc.threaded = 1;
 	}
-	if (attrp && !c11) attr = *attrp;
+	// if (attrp && !c11) attr = *attrp;
 
 	// __acquire_ptc();
-	if (!attrp || c11) {
-		attr._a_stacksize = __default_stacksize;
-		attr._a_guardsize = __default_guardsize;
-	}
+	// if (!attrp || c11) {
+	// 	attr._a_stacksize = __default_stacksize;
+	// 	attr._a_guardsize = __default_guardsize;
+	// }
 
-	if (attr._a_stackaddr) {
-		size_t need = libc.tls_size + __pthread_tsd_size;
-		size = attr._a_stacksize;
-		stack = (void *)(attr._a_stackaddr & -16);
-		stack_limit = (void *)(attr._a_stackaddr - size);
-		/* Use application-provided stack for TLS only when
-		 * it does not take more than ~12% or 2k of the
-		 * application's stack space. */
-		if (need < size/8 && need < 2048) {
-			tsd = stack - __pthread_tsd_size;
-			stack = tsd - libc.tls_size;
-			memset(stack, 0, need);
-		} else {
-			size = ROUND(need);
-		}
-		guard = 0;
-	} else {
-		guard = ROUND(attr._a_guardsize);
-		size = guard + ROUND(attr._a_stacksize
+	// if (attr._a_stackaddr) {
+	// 	size_t need = libc.tls_size + __pthread_tsd_size;
+	// 	size = attr._a_stacksize;
+	// 	stack = (void *)(attr._a_stackaddr & -16);
+	// 	stack_limit = (void *)(attr._a_stackaddr - size);
+	// 	/* Use application-provided stack for TLS only when
+	// 	 * it does not take more than ~12% or 2k of the
+	// 	 * application's stack space. */
+	// 	if (need < size/8 && need < 2048) {
+	// 		tsd = stack - __pthread_tsd_size;
+	// 		stack = tsd - libc.tls_size;
+	// 		memset(stack, 0, need);
+	// 	} else {
+	// 		size = ROUND(need);
+	// 	}
+	// 	guard = 0;
+	// } else {
+		// guard = ROUND(attr._a_guardsize);
+		size = /* guard + ROUND(attr._a_stacksize */
 			+ libc.tls_size +  __pthread_tsd_size);
-	}
+	// }
 
-	if (!tsd) {
-		// if (guard) {
-		// 	map = __mmap(0, size, PROT_NONE, MAP_PRIVATE|MAP_ANON, -1, 0);
-		// 	if (map == MAP_FAILED) goto fail;
-		// 	if (__mprotect(map+guard, size-guard, PROT_READ|PROT_WRITE)
-		// 	    && errno != ENOSYS) {
-		// 		__munmap(map, size);
-		// 		goto fail;
-		// 	}
-		// } else {
+	// if (!tsd) {
+	// 	if (guard) {
+	// 		map = __mmap(0, size, PROT_NONE, MAP_PRIVATE|MAP_ANON, -1, 0);
+	// 		if (map == MAP_FAILED) goto fail;
+	// 		if (__mprotect(map+guard, size-guard, PROT_READ|PROT_WRITE)
+	// 		    && errno != ENOSYS) {
+	// 			__munmap(map, size);
+	// 			goto fail;
+	// 		}
+	// 	} else {
 			map = __mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0);
 			if (map == MAP_FAILED) goto fail;
 		// }
 		tsd = map + size - __pthread_tsd_size;
-		if (!stack) {
-			stack = tsd - libc.tls_size;
-			stack_limit = map + guard;
-		}
-	}
+		// if (!stack) {
+		// 	stack = tsd - libc.tls_size;
+		// 	stack_limit = map + guard;
+		// }
+	// }
 
 	new = __copy_tls(tsd - libc.tls_size);
 	new->map_base = map;
 	new->map_size = size;
-	new->stack = stack;
-	new->stack_size = stack - stack_limit;
-	new->guard_size = guard;
+	// new->stack = stack;
+	// new->stack_size = stack - stack_limit;
+	// new->guard_size = guard;
 	new->self = new;
 	new->tsd = (void *)tsd;
 	new->locale = &libc.global_locale;
