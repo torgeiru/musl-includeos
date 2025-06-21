@@ -1,8 +1,11 @@
 #include "stdio_impl.h"
 #include "pthread_impl.h"
 
+extern void kprint(const char*);
 int __lockfile(FILE *f)
 {
+	kprint("Calling lockfile under the hood!/n");
+
 	int owner = f->lock, tid = __pthread_self()->tid;
 	if ((owner & ~MAYBE_WAITERS) == tid)
 		return 0;

@@ -78,8 +78,7 @@ static inline void a_spin()
 }
 
 #define a_crash a_crash
- extern void kprint(const char*);
- #define a_crash a_crash
+extern void kprint(const char*);
 static inline void a_crash()
 {
  kprint("\n*** Libc crashed 😵 ***\n");

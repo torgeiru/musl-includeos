@@ -284,7 +284,6 @@ int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict att
 	*res = new;
 	return 0;
 fail:
-	//__release_ptc();
 	return EAGAIN;
 }
 
