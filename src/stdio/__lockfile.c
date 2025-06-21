@@ -4,7 +4,7 @@
 extern void kprint(const char*);
 int __lockfile(FILE *f)
 {
-	kprint("Calling lockfile under the hood!/n");
+	kprint("Calling lockfile under the hood!\n");
 
 	int owner = f->lock, tid = __pthread_self()->tid;
 	if ((owner & ~MAYBE_WAITERS) == tid)
