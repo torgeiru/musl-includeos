@@ -236,7 +236,7 @@ static void init_file_lock(FILE *f)
 
 int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict attrp, void *(*entry)(void *), void *restrict arg)
 {
-	static int aux_thread_cnt = 1;
+	static int thread_cnt = 1;
 
 	size_t size;
 	struct pthread *self, *new;
@@ -267,7 +267,7 @@ int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict att
 	tsd = map + size - __pthread_tsd_size;
 	new = __copy_tls(tsd - libc.tls_size);
 
-	new->tid = aux_thread_cnt++;
+	new->tid = ++thread_cnt;
 	new->map_base = map;
 	new->map_size = size;
 	new->self = new;
